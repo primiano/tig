@@ -397,12 +397,12 @@ init_display(void)
 }
 
 int
-get_input(int prompt_position, struct key *key, bool modifiers)
+get_input(int prompt_position, struct key *key)
 {
 	struct view *view;
 	int i, key_value, cursor_y, cursor_x;
 
-	if (prompt_position)
+	if (prompt_position > 0)
 		input_mode = TRUE;
 
 	memset(key, 0, sizeof(*key));
@@ -430,16 +430,18 @@ get_input(int prompt_position, struct key *key, bool modifiers)
 		}
 
 		/* Update the cursor position. */
-		if (prompt_position) {
-			getbegyx(status_win, cursor_y, cursor_x);
-			cursor_x = prompt_position;
-		} else {
-			view = display[current_view];
-			getbegyx(view->win, cursor_y, cursor_x);
-			cursor_x = view->width - 1;
-			cursor_y += view->pos.lineno - view->pos.offset;
+		if (prompt_position >= 0) {
+			if (prompt_position) {
+				getbegyx(status_win, cursor_y, cursor_x);
+				cursor_x = prompt_position;
+			} else {
+				view = display[current_view];
+				getbegyx(view->win, cursor_y, cursor_x);
+				cursor_x = view->width - 1;
+				cursor_y += view->pos.lineno - view->pos.offset;
+			}
+			setsyx(cursor_y, cursor_x);
 		}
-		setsyx(cursor_y, cursor_x);
 
 		/* Refresh, accept single keystroke of input */
 		doupdate();
@@ -449,9 +451,6 @@ get_input(int prompt_position, struct key *key, bool modifiers)
 		/* wgetch() with nodelay() enabled returns ERR when
 		 * there's no input. */
 		if (key_value == ERR) {
-
-		} else if (key_value == KEY_ESC && modifiers) {
-			key->modifiers.escape = 1;
 
 		} else if (key_value == KEY_RESIZE) {
 			int height, width;
